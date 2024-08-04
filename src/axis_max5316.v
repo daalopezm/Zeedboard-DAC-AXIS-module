@@ -19,13 +19,19 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-module axis_max5316(
+module axis_max5316#(
+    // Parameters of Axi Slave Bus Interface IN_AXIS
+    parameter integer C_AXIS_TDATA_WIDTH	= 16
+)
+(
     input clk,            // System clock
-    input rst,            // Reset signal
+    input resetn,            // Reset signal
 
     // AXIS Interface
-    input [15:0] tdata,   // Data to be sent to the DAC
+    input [C_AXIS_TDATA_WIDTH-1:0] tdata,   // Data to be sent to the DAC
     input tvalid,         // Data valid signal
+    input tlast,             // TLAST signal from slave
+    input [(C_AXIS_TDATA_WIDTH/8)-1:0] tkeep,       // TKEEP signal from slave
     output reg tready,    // Data ready signal
     
     output reg SCLK_DAC,  // SPI clock
@@ -61,7 +67,7 @@ module axis_max5316(
 
     // SPI clock generation
     always @(posedge clk) begin
-        if (rst) begin
+        if (!resetn) begin
             SCLK_DAC <= 0;
         end else begin
             count <= count + 1;
@@ -74,7 +80,7 @@ module axis_max5316(
 
     // State machine and data transmission
     always @(posedge SCLK_DAC) begin
-        if (rst) begin
+        if (!resetn) begin
             state <= IDLE;
             CS_DAC <= 1;
             bit_cnt <= 0;
